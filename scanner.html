@@ -19,18 +19,51 @@
     </header>
 
     <main class="page">
-      <div class="container grid grid-2">
-        <section class="card" id="scanner-region">
-          <h1>Webcam QR Scanner</h1>
-          <p class="muted">Place the employee QR card inside the frame. Keep card steady for quick detection.</p>
-          <p id="clock" class="status-line" aria-live="polite"></p>
-          <div id="reader" aria-label="Camera feed"></div>
-          <p id="scanner-status" class="status-line status-warn" aria-live="polite">Initializing scanner...</p>
+      <div class="container">
+        <div class="actions" style="justify-content: center; margin-bottom: 1rem; align-items: center;">
+          <button class="btn" id="mode-qr-btn" type="button">QR Mode</button>
+          <button class="btn secondary" id="mode-face-btn" type="button">Face Mode (AI)</button>
+          <label class="camera-picker">
+            <span class="muted">Camera:</span>
+            <select id="camera-select" class="input" aria-label="Camera to use">
+              <option value="">Auto (default)</option>
+            </select>
+          </label>
+        </div>
+      </div>
 
-          <div class="actions" style="margin-top: 0.8rem;">
-            <button class="btn secondary" id="restart-btn" type="button">Restart Scanner</button>
-            <button class="btn secondary" id="sound-toggle-btn" type="button" aria-pressed="true">Sound: On</button>
+      <div class="container grid grid-2">
+        <section class="card" id="qr-card">
+          <div id="scanner-region">
+            <h1>Webcam QR Scanner</h1>
+            <p class="muted">Place the employee QR card inside the frame. Keep card steady for quick detection.</p>
+            <p id="clock" class="status-line" aria-live="polite"></p>
+            <div id="reader" aria-label="Camera feed"></div>
+            <p id="scanner-status" class="status-line status-warn" aria-live="polite">Initializing scanner...</p>
+
+            <div class="actions" style="margin-top: 0.8rem;">
+              <button class="btn secondary" id="restart-btn" type="button">Restart Scanner</button>
+              <button class="btn secondary" id="sound-toggle-btn" type="button" aria-pressed="true">Sound: On</button>
+            </div>
           </div>
+        </section>
+
+        <section class="card hidden" id="face-card">
+          <h1>AI Face Scanner</h1>
+          <p class="muted">
+            Look at the camera and keep your face inside the oval. No QR card needed —
+            the model trained in Google Colab verifies your identity locally in the browser.
+          </p>
+          <div class="face-video-wrap">
+            <video id="face-video" autoplay playsinline muted></video>
+            <div class="face-guide" aria-hidden="true"></div>
+          </div>
+          <p id="face-status" class="status-line status-warn" aria-live="polite">Face scanner idle.</p>
+          <p class="footer-note">Model output: <span id="face-confidence">—</span></p>
+          <p class="footer-note">
+            Note: the first scan of the day (Time In) must be a QR scan. Face scans handle
+            the rest of the day (break out / break in / time out).
+          </p>
         </section>
 
         <section class="card">
@@ -51,8 +84,10 @@
     <div id="scan-flash-overlay" aria-hidden="true"></div>
 
     <script src="https://unpkg.com/html5-qrcode" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js" defer></script>
     <script src="js/config.js" defer></script>
     <script src="js/api.js" defer></script>
     <script src="js/scanner.js" defer></script>
+    <script src="js/face.js" defer></script>
   </body>
 </html>

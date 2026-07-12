@@ -11,6 +11,7 @@
   const resultMessage = document.getElementById('result-message');
   const restartBtn = document.getElementById('restart-btn');
   const soundBtn = document.getElementById('sound-toggle-btn');
+  const cameraSelect = document.getElementById('camera-select');
   const clockEl = document.getElementById('clock');
   const flashOverlay = document.getElementById('scan-flash-overlay');
 
@@ -191,6 +192,23 @@ setResult({
     // Keep decode errors silent to avoid UI jitter.
   }
 
+  function populateCameraSelect(cameras) {
+    if (!cameraSelect) return;
+    const previous = cameraSelect.value;
+    while (cameraSelect.options.length > 1) cameraSelect.remove(1); // keep "Auto (default)"
+
+    cameras.forEach((camera, index) => {
+      const option = document.createElement('option');
+      option.value = camera.id;
+      option.textContent = camera.label || `Camera ${index + 1}`;
+      cameraSelect.appendChild(option);
+    });
+
+    if (previous && cameras.some((camera) => camera.id === previous)) {
+      cameraSelect.value = previous;
+    }
+  }
+
   function chooseCamera(cameras) {
     if (!Array.isArray(cameras) || !cameras.length) return null;
 
@@ -237,7 +255,13 @@ setResult({
         return;
       }
 
-      const preferred = cameras.find((camera) => camera.id === lastCameraId) || chooseCamera(cameras);
+      populateCameraSelect(cameras);
+
+      const selectedId = (cameraSelect && cameraSelect.value) || '';
+      const preferred =
+        cameras.find((camera) => camera.id === selectedId) ||
+        cameras.find((camera) => camera.id === lastCameraId) ||
+        chooseCamera(cameras);
       if (!preferred) {
         setStatus('Unable to choose a camera. Please restart scanner.', 'status-error');
         return;
@@ -283,6 +307,18 @@ setResult({
     }
   });
 
+  if (cameraSelect) {
+    cameraSelect.addEventListener('change', () => {
+      lastCameraId = cameraSelect.value; // '' = Auto, falls back to chooseCamera
+      // Only restart here if the QR scanner is the active mode; face.js
+      // listens for the same event and handles Face Mode itself.
+      if (isScannerRunning && !isStarting) {
+        setStatus('Switching camera...', 'status-warn');
+        startScanner();
+      }
+    });
+  }
+
   soundBtn.addEventListener('click', () => {
     soundOn = !soundOn;
     soundBtn.textContent = `Sound: ${soundOn ? 'On' : 'Off'}`;
@@ -292,6 +328,12 @@ setResult({
   window.setInterval(() => {
     if (clockEl) clockEl.textContent = `Local Time: ${new Date().toLocaleString()}`;
   }, 1000);
+
+  // Allow face.js (Face Mode) to pause/resume the QR scanner when switching modes.
+  window.QrScannerControl = {
+    start: startScanner,
+    stop: stopScannerSafe
+  };
 
   resetResultToIdle();
   startScanner();
